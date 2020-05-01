@@ -19,11 +19,17 @@ class NewsItem extends StatelessWidget {
               Container(
                 height: 100,
                 width: 100,
-                child: Image.network(
-                  news.imageUrl,
-                  height: 100,
-                  width: 100,
-                ),
+                child:  news.imageUrl != null
+                    ? Image.network(
+                        news.imageUrl,
+                        height: 100,
+                        width: 100,
+                      )
+                    : Image.asset(
+                        'assets/images/inteface.png',
+                        height: 100,
+                        width: 100,
+                      ),
                 margin: EdgeInsets.all(5),
               ),
               Container(
