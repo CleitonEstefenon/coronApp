@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:coronapp/models/news.dart';
+import 'package:coronapp/models/symptom.dart';
 import 'package:coronapp/utils/date_utils.dart';
+import 'package:coronapp/widgets/imagecheckbox.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -13,7 +15,7 @@ class HomePage extends StatefulWidget {
   static final to = DateUtils.dateToString(DateTime.now());
   String newsUrl =
       'http://newsapi.org/v2/everything?q=coronavirus&language=pt&from=$from&to=$to&apiKey=96151502a3d2498399c93fcca45593c4';
-      
+
   HomePage({Key key, this.user}) : super(key: key);
 
   @override
@@ -21,12 +23,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool _check = false;
   int _indexTab = 0;
-
   var newsData;
   List articles;
   List<News> news;
   var refreshNews = GlobalKey<RefreshIndicatorState>();
+  List<Symptom> symptoms;
 
   @override
   void initState() {
@@ -35,19 +38,24 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<String> getData() async {
-    refreshNews.currentState.show();
+    //refreshNews.currentState.show();
 
     var response = await http.get(
       Uri.encodeFull(widget.newsUrl),
       headers: {"Accept": "application/json"},
     );
 
+    var symptomsAsset = await DefaultAssetBundle.of(context)
+        .loadString("assets/data/symptoms.json");
+    var symptomList = json.decode(symptomsAsset) as List;
+
     this.setState(() {
       newsData = jsonDecode(response.body);
       articles = newsData["articles"] as List;
       news = articles.map<News>((json) => News.fromJson(json)).toList();
+      symptoms =
+          symptomList.map<Symptom>((json) => Symptom.fromJson(json)).toList();
     });
-
     return "OK";
   }
 
@@ -59,7 +67,6 @@ class _HomePageState extends State<HomePage> {
           child: ListView.builder(
               itemCount: news == null ? 0 : news.length,
               itemBuilder: (BuildContext context, int index) {
-                //return NewsItem(news[index]);
                 News noticia = news[index];
                 return Container(
                   child: Column(
@@ -67,7 +74,9 @@ class _HomePageState extends State<HomePage> {
                     children: <Widget>[
                       ListTile(
                         leading: CircleAvatar(
-                          child: Image.network(noticia.imageUrl),
+                          child: noticia.imageUrl != null
+                              ? Image.network(noticia.imageUrl)
+                              : Image.asset('assets/images/interface.png',),
                           backgroundColor: Colors.transparent,
                           maxRadius: 32,
                         ),
@@ -117,9 +126,28 @@ class _HomePageState extends State<HomePage> {
         );
         break;
       case 1:
-        return Container(
-          height: 200,
-          color: Theme.of(context).accentColor,
+        return Column(
+          children: <Widget>[
+            Text("Teste rápido de sintomas"),
+            Expanded(
+                child: ListView.builder(
+                    itemCount: symptoms == null ? 0 : symptoms.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return new ImageCheckBox(
+                        value: _check,
+                        onChanged: (bool val) {
+                          setState(() {
+                            _check = val;
+                          });
+                        },
+                        checkDescription: '${symptoms[index].name}',
+                      );
+                    })),
+            RaisedButton(
+              child: Text("Testar"),
+              onPressed: () => {},
+            )
+          ],
         );
         break;
       case 2:
@@ -183,7 +211,7 @@ class _HomePageState extends State<HomePage> {
               color: Colors.white,
             ),
             title: Text(
-              'Diagnóstico',
+              'Notícias',
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -193,7 +221,7 @@ class _HomePageState extends State<HomePage> {
               color: Colors.white,
             ),
             title: Text(
-              'Diagnóstico',
+              'Teste Rapido',
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -203,7 +231,7 @@ class _HomePageState extends State<HomePage> {
               color: Colors.white,
             ),
             title: Text(
-              'Diagnóstico',
+              'Sobre',
               style: TextStyle(color: Colors.white),
             ),
           ),
